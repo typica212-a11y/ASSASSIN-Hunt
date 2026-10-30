@@ -3,7 +3,8 @@ name: Build Android APK
 on:
 workflow_dispatch:
 push:
-branches: [main]
+branches:
+- main
 
 permissions:
 contents: read
@@ -25,22 +26,40 @@ uses: actions/checkout@v4
     uses: android-actions/setup-android@v3
 
   - name: Create Android project
+    shell: bash
     run: |
       mkdir -p app/src/main/assets app/src/main/java/com/assassin/hunt
       cp assassin_hunt_v06_android_fix.html app/src/main/assets/index.html
+
       cat > settings.gradle <<'EOF'
-      pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
-      dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
+      pluginManagement {
+          repositories {
+              google()
+              mavenCentral()
+              gradlePluginPortal()
+          }
+      }
+      dependencyResolutionManagement {
+          repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+          repositories {
+              google()
+              mavenCentral()
+          }
+      }
       rootProject.name = 'AssassinHunt'
       include ':app'
       EOF
+
       cat > build.gradle <<'EOF'
       plugins {
           id 'com.android.application' version '8.6.1' apply false
       }
       EOF
+
       cat > app/build.gradle <<'EOF'
-      plugins { id 'com.android.application' }
+      plugins {
+          id 'com.android.application'
+      }
       android {
           namespace 'com.assassin.hunt'
           compileSdk 35
@@ -53,11 +72,18 @@ uses: actions/checkout@v4
           }
       }
       EOF
+
       cat > app/src/main/AndroidManifest.xml <<'EOF'
       <manifest xmlns:android="http://schemas.android.com/apk/res/android">
           <uses-permission android:name="android.permission.INTERNET"/>
-          <application android:theme="@android:style/Theme.Material.NoActionBar" android:label="ASSASSIN HUNT" android:usesCleartextTraffic="true">
-              <activity android:name=".MainActivity" android:screenOrientation="landscape" android:exported="true">
+          <application
+              android:theme="@android:style/Theme.Material.NoActionBar"
+              android:label="ASSASSIN HUNT"
+              android:usesCleartextTraffic="true">
+              <activity
+                  android:name=".MainActivity"
+                  android:screenOrientation="landscape"
+                  android:exported="true">
                   <intent-filter>
                       <action android:name="android.intent.action.MAIN"/>
                       <category android:name="android.intent.category.LAUNCHER"/>
@@ -66,14 +92,17 @@ uses: actions/checkout@v4
           </application>
       </manifest>
       EOF
+
       cat > app/src/main/java/com/assassin/hunt/MainActivity.java <<'EOF'
       package com.assassin.hunt;
       import android.app.Activity;
       import android.os.Bundle;
       import android.webkit.WebView;
       import android.webkit.WebSettings;
+
       public class MainActivity extends Activity {
-          @Override public void onCreate(Bundle b) {
+          @Override
+          public void onCreate(Bundle b) {
               super.onCreate(b);
               WebView w = new WebView(this);
               WebSettings s = w.getSettings();
@@ -85,11 +114,11 @@ uses: actions/checkout@v4
           }
       }
       EOF
+
       echo "org.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8" > gradle.properties
 
   - name: Build APK
-    run: |
-      gradle --no-daemon assembleDebug
+    run: gradle --no-daemon assembleDebug
 
   - name: Upload APK
     uses: actions/upload-artifact@v4

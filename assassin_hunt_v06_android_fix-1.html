@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>ASSASSIN: Hunt for the Night Haunter — Prototype</title>
+<style>
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07090d;color:#eee;font-family:system-ui,-apple-system,Segoe UI,sans-serif;touch-action:none}
+  #game{position:fixed;inset:0}
+  #hud{position:fixed;inset:0;pointer-events:none}
+  .panel{background:linear-gradient(135deg,rgba(8,12,18,.92),rgba(28,10,14,.86));border:1px solid #63343b;box-shadow:0 0 18px #0008;padding:10px 13px;border-radius:8px}
+  #title{position:absolute;top:12px;left:12px;font-weight:900;letter-spacing:1.5px;font-size:clamp(12px,2.6vw,18px);color:#e6d8d2}
+  #objective{position:absolute;top:58px;left:12px;font-size:12px;color:#c7b8b5;max-width:62vw}
+  #stats{position:absolute;top:12px;right:12px;width:min(38vw,210px);font-size:12px}
+  .bar{height:8px;background:#28272b;border:1px solid #65545a;border-radius:8px;overflow:hidden;margin:5px 0 8px}
+  .fill{height:100%;width:100%;background:linear-gradient(90deg,#8c1525,#e34a45);transition:width .15s}
+  #bossfill{background:linear-gradient(90deg,#5b0b1c,#c8b7bd)}
+  #assetStatus{position:absolute;left:50%;bottom:154px;transform:translateX(-50%);background:#080b11d9;border:1px solid #52616b;border-radius:8px;padding:7px 10px;font-size:11px;color:#cbd8df;max-width:85vw;text-align:center;z-index:5}
+  #hint{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);font-size:clamp(14px,3vw,22px);font-weight:800;text-align:center;text-shadow:0 2px 8px #000;max-width:80vw}
+  #controls{position:fixed;inset:0;pointer-events:none}
+  #stick{position:absolute;left:20px;bottom:24px;width:118px;height:118px;border-radius:50%;background:#c9d5e01c;border:2px solid #c9d5e04d;pointer-events:auto;touch-action:none}
+  #nub{position:absolute;left:34px;top:34px;width:46px;height:46px;border-radius:50%;background:#cbd6e080;border:1px solid #fff9}
+  .buttons{position:absolute;right:12px;bottom:22px;display:grid;grid-template-columns:repeat(3,60px);gap:7px;pointer-events:auto}
+  button{width:60px;height:60px;border-radius:50%;background:linear-gradient(145deg,#31252a,#100e13);border:2px solid #a64b55;color:#f8e8e8;font-weight:800;font-size:11px;box-shadow:0 3px 10px #0008;touch-action:manipulation}
+  button:active{background:#6d1b2a;transform:scale(.96)}
+  #smallnote{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);font-size:10px;color:#b5a7a7;white-space:nowrap}
+  #start{position:fixed;inset:0;background:radial-gradient(ellipse at center,#171a21ed,#050609f5);display:flex;align-items:center;justify-content:center;z-index:10;padding:22px}
+  #card{max-width:440px;text-align:center;padding:24px;border:1px solid #7e333e;border-radius:14px;background:#0a0b10ed;box-shadow:0 0 50px #000}
+  #card h1{font-size:clamp(25px,7vw,42px);line-height:1.02;margin:0 0 8px;color:#eee0dc}
+  #card .sub{color:#c45a66;font-weight:800;letter-spacing:2px;font-size:12px}
+  #card p{color:#c5bdc1;line-height:1.5;font-size:14px}
+  #play{width:auto;height:auto;border-radius:8px;padding:13px 25px;font-size:14px;letter-spacing:1px}
+  .desktop{font-size:11px;color:#8e888d}
+  @media (min-width:800px){#stick,.buttons{opacity:.75} #smallnote{font-size:12px}}
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div id="assetStatus">Загрузка настоящей 3D-модели…</div>
+<div id="hud">
+  <div id="title" class="panel">ASSASSIN <span style="color:#b83a49">/</span> HUNT FOR THE NIGHT HAUNTER</div>
+  <div id="objective" class="panel">ЗАДАНИЕ: зачистить арену. Найти путь к Конраду Кёрзу.</div>
+  <div id="stats" class="panel">
+    <div>КАЛЛИДУС <span id="hptext">100 / 100</span></div><div class="bar"><div id="hpfill" class="fill"></div></div>
+    <div>ПОВЕЛИТЕЛИ НОЧИ <span id="enemytext">3</span></div>
+    <div id="bosslabel" style="display:none;margin-top:7px">КОНРАД КЁРЗ <span id="bosstext">—</span><div class="bar"><div id="bossfill" class="fill"></div></div></div>
+  </div>
+  <div id="hint"></div>
+</div>
+<div id="controls">
+  <div id="stick"><div id="nub"></div></div>
+  <div class="buttons">
+    <button id="attack">ФАЗОВЫЙ<br>МЕЧ</button>
+    <button id="dodge">РЫВОК</button>
+    <button id="parry">ПАРИРОВАНИЕ</button>
+    <button id="heavy">СИЛЬНЫЙ<br>УДАР</button>
+    <button id="power">ПОЛИМОРФИН</button>
+  </div>
+  <div id="smallnote">Телефон: джойстик + кнопки · ПК: WASD, J — атака, K — сильный удар, Space — рывок, L — парирование</div>
+</div>
+<div id="start">
+  <div id="card">
+    <div class="sub">WARHAMMER 40,000 — FAN-MADE PROTOTYPE</div>
+    <h1>HUNT FOR<br>THE NIGHT HAUNTER</h1>
+    <p>Каллидус проникла в готический комплекс Повелителей Ночи. Переживи засаду: уклоняйся от ударов, парируй в последний момент и отвечай контратакой.</p>
+    <p><b>Прототип 0.5 · настоящая 3D-модель</b> · 3D-арена · тактический ближний бой · парирование и контратаки</p>
+    <button id="play">НАЧАТЬ ОХОТУ</button>
+    <p class="desktop">Нужен интернет: игра загружает настоящую GLB-модель, текстуры и анимации.</p>
+  </div>
+</div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+const mount=document.getElementById('game');
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x080b11);
+scene.fog=new THREE.FogExp2(0x080b11,0.027);
+const camera=new THREE.PerspectiveCamera(42,innerWidth/innerHeight,0.1,150);
+camera.position.set(0,13,13);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5)); renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+mount.appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0x9da8c4,0x171016,2.0));
+const key=new THREE.DirectionalLight(0xc9d8ff,2.2); key.position.set(-5,12,7); key.castShadow=true; key.shadow.mapSize.set(1024,1024); scene.add(key);
+const redLight=new THREE.PointLight(0xa20d26,45,16); redLight.position.set(3,4,-3); scene.add(redLight);
+const greenLight=new THREE.PointLight(0x32ff8c,18,9); greenLight.position.set(-4,2,3); scene.add(greenLight);
+
+const mat=(color,roughness=.8,metalness=.05,emissive=0x000000)=>new THREE.MeshStandardMaterial({color,roughness,metalness,emissive});
+// Procedural surface maps: panel seams, tiny scratches and stippled metal grain.
+// These are generated locally in the browser; no extra texture downloads are required.
+function makeSurfaceTexture(base, accent, seed=1, cloth=false){
+ const c=document.createElement('canvas');c.width=256;c.height=256;
+ const ctx=c.getContext('2d');ctx.fillStyle=base;ctx.fillRect(0,0,256,256);
+ let n=seed>>>0;const rand=()=>{n=(n*1664525+1013904223)>>>0;return n/4294967296};
+ for(let i=0;i<5200;i++){
+   const x=rand()*256,y=rand()*256,a=rand()*(cloth?.12:.22);
+   ctx.fillStyle=`rgba(${rand()>.5?255:0},${rand()>.5?255:0},${rand()>.5?255:0},${a})`;
+   ctx.fillRect(x,y,rand()*(cloth?2:3)+.4,rand()*(cloth?2:3)+.4);
+ }
+ if(!cloth){
+   ctx.strokeStyle=accent;ctx.lineWidth=2;ctx.globalAlpha=.8;
+   for(let y=18;y<256;y+=64){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(256,y);ctx.stroke()}
+   for(let x=18;x<256;x+=64){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,256);ctx.stroke()}
+   ctx.globalAlpha=1;
+   for(let i=0;i<70;i++){const x=rand()*256,y=rand()*256;ctx.strokeStyle=rand()>.5?'rgba(225,230,235,.42)':'rgba(0,0,0,.5)';ctx.lineWidth=rand()*1.5+.3;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+(rand()-.5)*14,y+(rand()-.5)*5);ctx.stroke()}
+   for(let y=12;y<256;y+=32)for(let x=12;x<256;x+=32){ctx.fillStyle=accent;ctx.globalAlpha=.85;ctx.beginPath();ctx.arc(x,y,1.5,0,Math.PI*2);ctx.fill()}
+ } else {
+   ctx.globalAlpha=.22;ctx.strokeStyle=accent;ctx.lineWidth=3;
+   for(let i=-256;i<512;i+=24){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i+100,256);ctx.stroke()}
+   ctx.globalAlpha=1;
+ }
+ const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(1.4,1.4);t.anisotropy=4;return t;
+}
+const armorTexture=makeSurfaceTexture('#252b31','#626b73',17,false);
+const callidusTexture=makeSurfaceTexture('#182a2a','#7b9b9b',23,false);
+const curzeTexture=makeSurfaceTexture('#11131c','#7e1728',41,false);
+const cloakTexture=makeSurfaceTexture('#171018','#662034',59,true);
+const floorMat=mat(0x22242a,1), stoneMat=mat(0x37343a), darkMat=mat(0x11151d,.7,.3), armorMat=mat(0x171c24,.45,.5), redMat=mat(0x7c1527,.65,.1), boneMat=mat(0xb5aaa0), greenMat=mat(0x26ff87,.3,.4,0x0b8c45);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(44,44),floorMat); floor.rotation.x=-Math.PI/2; floor.receiveShadow=true; scene.add(floor);
+const grid=new THREE.GridHelper(44,44,0x3b3037,0x28242c); grid.position.y=.012; scene.add(grid);
+
+// gothic arena walls and pillars
+function box(x,y,z,sx,sy,sz,material,cast=true){const m=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),material);m.position.set(x,y,z);m.castShadow=cast;m.receiveShadow=true;scene.add(m);return m}
+for(let i=-4;i<=4;i++){
+  box(i*4,1.6,-18,1.15,3.2,1.15,stoneMat);
+  box(i*4,1.6,18,1.15,3.2,1.15,stoneMat);
+  if(i>-4&&i<4){box(-18,1.6,i*4,1.15,3.2,1.15,stoneMat);box(18,1.6,i*4,1.15,3.2,1.15,stoneMat)}
+}
+for(const [x,z] of [[-8,-7],[8,-7],[-8,7],[8,7],[-13,0],[13,0]]){
+  box(x,2.1,z,1.4,4.2,1.4,stoneMat);
+  const cap=box(x,4.35,z,1.9,.35,1.9,boneMat); cap.material=stoneMat;
+  const lamp=new THREE.PointLight(0xb51c35,12,6);lamp.position.set(x,3.5,z);scene.add(lamp);
+}
+for(let i=0;i<7;i++){box(-12+i*4,.25,-12,2,.5,.55,darkMat);box(-12+i*4,.25,12,2,.5,.55,darkMat)}
+// decorative central dais
+const dais=new THREE.Mesh(new THREE.CylinderGeometry(4.1,4.5,.35,12),darkMat);dais.position.set(0,.18,-10);dais.receiveShadow=true;scene.add(dais);
+const rune=new THREE.Mesh(new THREE.TorusGeometry(2.7,.055,6,40),redMat);rune.rotation.x=Math.PI/2;rune.position.set(0,.39,-10);scene.add(rune);
+
+function makeFighter({player=false,boss=false,x=0,z=0}={}){
+ const g=new THREE.Group();scene.add(g);g.position.set(x,0,z);
+ const scale=boss?1.22:(player?0.94:1.0);
+ g.scale.setScalar(scale);
+ const suit=player?mat(0x101820,.48,.42):mat(boss?0x090d16:0x17202b,.42,.62);
+ suit.map=player?callidusTexture:curzeTexture; suit.needsUpdate=true;
+ const armor=player?mat(0x202a32,.38,.68):mat(boss?0x101522:0x26303c,.34,.72);
+ armor.map=player?callidusTexture:(boss?curzeTexture:armorTexture); armor.needsUpdate=true;
+ const trim=player?mat(0x7b9b9b,.32,.72):mat(boss?0x7e1728:0x46505d,.35,.65);
+ const cloth=player?mat(0x15191e,.9,.05):mat(boss?0x180d17:0x1b1820,.92,.02);
+ cloth.map=cloakTexture; cloth.needsUpdate=true;
+ const skin=mat(player?0x8d9a9b:0x9c9992,.72,.08);
+ const metal=mat(0x707b82,.3,.8);
+ const glow=player?mat(0x2dff9a,.24,.45,0x0bff74):mat(0xff2344,.25,.45,0x9d001b);
+ const dark=mat(0x070a10,.5,.4);
+ const add=(geo,material,pos,rot=null,parent=g)=>{const m=new THREE.Mesh(geo,material);m.position.set(...pos);if(rot)m.rotation.set(...rot);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m};
+ const capsule=(r,len,material,pos,rot=null)=>add(new THREE.CapsuleGeometry(r,len,5,8),material,pos,rot);
+ // tapered torso, waist and armored chest
+ capsule(player?.22:.3,player?.5:.68,suit,[0,1.05,0]);
+ add(new THREE.BoxGeometry(player?.48:.66,.43,.28),armor,[0,1.28,-.015],[.05,0,0]);
+ add(new THREE.BoxGeometry(player?.32:.48,.16,.31),trim,[0,1.38,-.025]);
+ add(new THREE.BoxGeometry(player?.34:.46,.12,.3),dark,[0,1.16,-.17]);
+ // breastplate ridges / chest emblem
+ for(let i=-1;i<=1;i++) add(new THREE.BoxGeometry(.045,.27,.025),i===0?trim:metal,[i*.12,1.27,-.17],[0,0,i*.08]);
+ if(boss){
+   add(new THREE.SphereGeometry(.115,8,8),trim,[0,1.25,-.2]);
+   add(new THREE.ConeGeometry(.065,.16,5),metal,[0,1.25,-.29],[Math.PI/2,0,0]);
+ }
+ // belt and segmented fauld
+ add(new THREE.BoxGeometry(player?.38:.54,.11,.3),metal,[0,.79,0]);
+ for(let i=-2;i<=2;i++) add(new THREE.BoxGeometry(.105,.25,.27),i===0?trim:armor,[i*.105,.65,.015],[0,0,i*.035]);
+ // head, mask and helmet
+ capsule(player?.16:.22,.19,skin,[0,1.73,-.01]);
+ add(new THREE.SphereGeometry(player?.19:.255,12,10),armor,[0,1.84,-.005]);
+ add(new THREE.BoxGeometry(player?.22:.3,.12,.12),dark,[0,1.78,-.16]);
+ add(new THREE.BoxGeometry(player?.16:.23,.035,.035),glow,[0,1.82,-.222]);
+ // jaw / respirator
+ add(new THREE.BoxGeometry(player?.14:.19,.08,.07),metal,[0,1.72,-.17]);
+ for(let i=-1;i<=1;i++) add(new THREE.BoxGeometry(.018,.045,.018),dark,[i*.04,1.72,-.21]);
+ // helmet crest for Callidus; bat-wing crown and horns for Curze/Night Lords
+ if(player){
+   const crest=add(new THREE.ConeGeometry(.085,.34,5),trim,[0,2.08,.02],[-.25,0,0]);
+   add(new THREE.BoxGeometry(.035,.2,.035),metal,[0,1.98,-.02]);
+ } else {
+   for(const side of [-1,1]){
+     add(new THREE.ConeGeometry(.075,.42,5),trim,[side*.16,2.02,.02],[0,0,-side*.45]);
+     const wing=add(new THREE.BoxGeometry(.24,.3,.045),dark,[side*.25,1.97,.07],[0,0,side*.48]);
+     add(new THREE.BoxGeometry(.2,.035,.055),trim,[side*.27,2.03,.035],[0,0,side*.48]);
+   }
+   if(boss) for(let i=0;i<3;i++) add(new THREE.ConeGeometry(.045,.25,5),metal,[(i-1)*.11,2.08,.08],[-.25,0,(i-1)*.18]);
+ }
+ // broad shoulder armor with raised rims and segmented arms
+ const legs=[],arms=[];
+ for(const side of [-1,1]){
+   add(new THREE.SphereGeometry(player?.15:.24,10,8),armor,[side*(player?.31:.43),1.39,0]);
+   add(new THREE.SphereGeometry(player?.16:.25,10,8),trim,[side*(player?.32:.44),1.43,-.025]);
+   add(new THREE.BoxGeometry(player?.19:.29,.18,.23),armor,[side*(player?.32:.44),1.42,-.035]);
+   // forearm and gauntlet
+   const arm=capsule(.075,.34,suit,[side*(player?.4:.52),1.08,-.01],[0,0,-side*.12]);arms.push(arm);
+   capsule(.085,.18,armor,[side*(player?.43:.55),.91,-.035],[0,0,-side*.1]);
+   add(new THREE.BoxGeometry(.12,.09,.12),metal,[side*(player?.43:.55),.84,-.06]);
+   // thigh and knee guards
+   const thigh=capsule(.105,.32,suit,[side*.17,.46,0]);legs.push(thigh);
+   add(new THREE.BoxGeometry(.19,.17,.24),armor,[side*.17,.43,-.045]);
+   add(new THREE.BoxGeometry(.16,.1,.22),trim,[side*.17,.44,-.16]);
+   // boots
+   add(new THREE.BoxGeometry(.18,.13,.32),dark,[side*.17,.12,-.055]);
+   add(new THREE.BoxGeometry(.19,.07,.32),metal,[side*.17,.09,-.065]);
+   // shoulder insignia / small armor bolts
+   for(const z of [-.1,.07]) add(new THREE.SphereGeometry(.025,6,5),metal,[side*(player?.32:.44),1.45,z]);
+ }
+ // cloak: a broad angular, dark panel behind Night Lords, with red inner lining
+ if(!player){
+   const capeShape=new THREE.Shape();capeShape.moveTo(-.28,1.62);capeShape.lineTo(.28,1.62);capeShape.lineTo(.55,.25);capeShape.lineTo(.22,.38);capeShape.lineTo(0,.18);capeShape.lineTo(-.2,.38);capeShape.lineTo(-.55,.25);capeShape.closePath();
+   const capeGeo=new THREE.ShapeGeometry(capeShape);
+   const cape=add(capeGeo,cloth,[0,0,.18],[0,0,0]);
+   cape.material.side=THREE.DoubleSide;
+   if(boss){
+     // stylized lightning scars on the cape, metallic zig-zags
+     for(const side of [-1,1]){
+       const pts=[new THREE.Vector3(side*.12,1.38,.195),new THREE.Vector3(side*.04,1.12,.195),new THREE.Vector3(side*.16,.91,.195),new THREE.Vector3(side*.08,.68,.195)];
+       const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0x6c9fd0}));
+       g.add(line);
+     }
+   }
+ }
+ // weapons: Callidus phase sword and the Night Haunter's long brutal blade
+ const bladeGroup=new THREE.Group();g.add(bladeGroup);
+ const weaponX=player?.56:.68;
+ add(new THREE.BoxGeometry(.11,.28,.11),metal,[weaponX,.73,-.12],null,bladeGroup);
+ add(new THREE.BoxGeometry(.24,.055,.14),trim,[weaponX,.86,-.12],null,bladeGroup);
+ const bladeLen=boss?1.25:1.08;
+ const blade=add(new THREE.BoxGeometry(boss?.14:.075,bladeLen,boss?.095:.055),glow,[weaponX,1.38,-.12],[0,0,boss?-.12:-.18],bladeGroup);
+ if(boss){
+   add(new THREE.BoxGeometry(.21,.28,.12),dark,[weaponX,2.02,-.12],[0,0,-.12],bladeGroup);
+   add(new THREE.ConeGeometry(.09,.22,5),trim,[weaponX,2.75,-.12],[0,0,Math.PI],bladeGroup);
+ }else{
+   add(new THREE.BoxGeometry(.11,.1,.08),metal,[weaponX,1.92,-.12],null,bladeGroup);
+ }
+ // Callidus's compact second blade / wrist-mounted spike; Curze's trophy chains
+ if(player){
+   add(new THREE.BoxGeometry(.045,.5,.05),glow,[-.49,1.03,-.08],[0,0,.4]);
+   add(new THREE.BoxGeometry(.12,.08,.12),metal,[-.4,.82,-.05]);
+ } else {
+   for(let i=0;i<3;i++) add(new THREE.TorusGeometry(.035,.009,4,8),metal,[.13+i*.045,.95-i*.07,-.18],[Math.PI/2,0,0]);
+ }
+ // subtle glowing armor details
+ for(const side of [-1,1]){
+   add(new THREE.BoxGeometry(.035,.2,.025),glow,[side*(player?.25:.36),1.28,-.18],[0,0,-side*.15]);
+ }
+ return {g,legs,blade,arms,bladeGroup,modelMixer:null,modelActions:{},modelRoot:null};
+}
+const player=makeFighter({player:true,x:0,z:5});
+let hp=100,stamina=100,attackCooldown=0,dodgeTime=0,invuln=0,powerTime=0,heavyCooldown=0,parryTime=0,parryCooldown=0,gameStarted=false,bossSpawned=false,gameOver=false;
+const enemies=[];
+let realModelTemplate=null, realClips={};
+function spawnEnemy(x,z,boss=false){
+ const f=makeFighter({boss,x,z}); enemies.push({f,hp:boss?260:55,max:boss?260:55,speed:boss?1.45:1.7,attack:.6+Math.random()*.7,windup:0,stun:0,boss,dead:false,hitFlash:0});
+  if(realModelTemplate)applyRealModel(f);
+ if(boss){bossSpawned=true;document.getElementById('bosslabel').style.display='block';document.getElementById('objective').textContent='ЗАДАНИЕ: пережить встречу с Конрадом Кёрзом.'}
+}
+spawnEnemy(-5,-3);spawnEnemy(5,-3);spawnEnemy(0,-1);
+
+function applyRealModel(f){
+ if(!realModelTemplate||f.modelRoot)return;
+ for(const child of [...f.g.children]){if(child!==f.bladeGroup)child.visible=false;}
+ const model=window.__assassinCloneSkeleton(realModelTemplate);
+ const box=new THREE.Box3().setFromObject(model);
+ const size=box.getSize(new THREE.Vector3());
+ const isPlayer=f.g===player.g;
+ const isBoss=enemies.some(e=>e.f===f&&e.boss);
+ const targetHeight=isPlayer?1.85:(isBoss?2.08:1.9);
+ const sc=targetHeight/Math.max(size.y,.001);
+ model.scale.setScalar(sc);
+ model.position.set(0,-box.min.y*sc,0);
+ model.traverse(o=>{
+   if(!o.isMesh)return;
+   o.castShadow=true;o.receiveShadow=true;
+   const tint=isPlayer?0x83a59a:(isBoss?0x8c2438:0x8795a4);
+   const tintMat=m=>{if(!m)return m;const c=m.clone();if(c.color)c.color.multiply(new THREE.Color(tint));c.roughness=Math.min(1,Math.max(.3,c.roughness??.75));return c;};
+   o.material=Array.isArray(o.material)?o.material.map(tintMat):tintMat(o.material);
+ });
+ f.g.add(model);f.modelRoot=model;
+ if(realClips.idle){
+   f.modelMixer=new THREE.AnimationMixer(model);f.modelActions={};
+   for(const [name,clip] of Object.entries(realClips)){
+     const action=f.modelMixer.clipAction(clip);action.enabled=true;f.modelActions[name]=action;
+   }
+   f.modelActions.idle?.play();f.modelCurrent='idle';
+ }
+}
+// Load a real textured, rigged GLB character and motion clips.
+// The source is a free CC0 Cyber Combat Soldier asset; fallback procedural fighters remain if remote loading fails.
+async function loadRealModels(){
+ const status=document.getElementById('assetStatus');
+ try {
+   // Load add-ons lazily: if an external model module is blocked on Android,
+   // the core game still starts with its built-in fallback characters.
+   const [{GLTFLoader},{MeshoptDecoder},{clone:cloneSkeleton}] = await Promise.all([
+     import('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js'),
+     import('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/meshopt_decoder.module.js'),
+     import('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/utils/SkeletonUtils.js')
+   ]);
+   window.__assassinCloneSkeleton=cloneSkeleton;
+   const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+ const modelUrl='https://models.codelove.in/library/gaming/combat-soldier.glb';
+   status.textContent='Загрузка текстурированной модели бойца…';
+   const modelGltf=await loader.loadAsync(modelUrl);
+   realModelTemplate=modelGltf.scene;
+   const animUrls={
+     idle:'https://models.codelove.in/animations/m_idle_neutral_01.glb',
+     walk:'https://models.codelove.in/animations/m_walk_neutral_01.glb',
+     run:'https://models.codelove.in/animations/m_run_neutral_01.glb'
+   };
+   const clips={};
+   await Promise.all(Object.entries(animUrls).map(async([name,url])=>{
+     try{const a=await loader.loadAsync(url);if(a.animations&&a.animations[0])clips[name]=a.animations[0];}
+     catch(err){console.warn('Animation unavailable:',name,err);}
+   }));
+   realClips=clips;
+   const fighters=[player,...enemies.map(e=>e.f)];
+   for(const f of fighters)applyRealModel(f);
+   status.textContent='Настоящая GLB-модель и текстуры загружены · анимации подключены';
+   setTimeout(()=>{status.style.display='none'},4500);
+ }catch(err){
+   console.error('Could not load real model:',err);
+   status.textContent='Не удалось загрузить внешнюю модель. Проверь интернет — оставлена резервная модель.';
+ }
+}
+function setModelAnimation(f,name){
+ if(!f||!f.modelMixer||!f.modelActions||!f.modelActions[name]||f.modelCurrent===name)return;
+ const next=f.modelActions[name];
+ if(f.modelActions[f.modelCurrent])f.modelActions[f.modelCurrent].fadeOut(.18);
+ next.reset().fadeIn(.18).play();f.modelCurrent=name;
+}
+loadRealModels();
+function addBurst(pos,color=0x43ff9a){const m=new THREE.Mesh(new THREE.SphereGeometry(.18,8,8),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.9}));m.position.copy(pos);scene.add(m);let t=.25;bursts.push({m,t,max:t})}
+const bursts=[];
+let move={x:0,y:0},keys={};let lastTime=performance.now();
+let attackAnim=0,heavyAnim=0;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function setHint(s){const h=document.getElementById('hint');h.textContent=s;h.style.opacity=s?'1':'0';}
+function damagePlayer(d){if(invuln>0||gameOver)return;hp=Math.max(0,hp-d);document.getElementById('hpfill').style.width=hp+'%';document.getElementById('hptext').textContent=hp+' / 100';if(hp<=0){gameOver=true;setHint('КАЛЛИДУС ПАЛА<br><small>Обнови страницу, чтобы начать заново.</small>')}}
+function doAttack(heavy=false){
+ if(!gameStarted||gameOver)return;
+ if(heavy&&heavyCooldown>0)return;
+ if(!heavy&&attackCooldown>0)return;
+ if(heavy){heavyCooldown=.9;heavyAnim=.38;}else{attackCooldown=.34;attackAnim=.25;}
+ const range=heavy?3.0:2.35, damage=heavy?38:22;
+ let hits=0;
+ for(const e of enemies){if(e.dead)continue;const dx=e.f.g.position.x-player.g.position.x,dz=e.f.g.position.z-player.g.position.z,dist=Math.hypot(dx,dz);if(dist<range){
+   const facing=new THREE.Vector3(Math.sin(player.g.rotation.y),0,Math.cos(player.g.rotation.y));
+   const toward=new THREE.Vector3(dx,0,dz).normalize();
+   if(dist<1.3||facing.dot(toward)>.05){e.hp-=damage*(powerTime>0?1.5:1);e.hitFlash=.14;hits++;addBurst(e.f.g.position.clone().add(new THREE.Vector3(0,1,0)),e.boss?0xff244b:0x37ff91);if(e.hp<=0){e.dead=true;scene.remove(e.f.g);if(e.boss){setHint('КЁРЗ ПОВЕРЖЕН<br><small>Прототип завершён</small>')} }}
+ }}
+ if(player.blade){player.blade.rotation.z=heavy?-1.1:-.8;setTimeout(()=>{if(player.blade)player.blade.rotation.z=-.18},130)}
+ if(hits===0&&heavy){setHint('УДАР В ПУСТОТУ');setTimeout(()=>setHint(''),500)}
+}
+function dodge(){if(!gameStarted||gameOver||dodgeTime>0)return;dodgeTime=.28;invuln=.48;setHint('УКЛОНЕНИЕ');setTimeout(()=>{if(!gameOver)setHint('')},350)}
+function parry(){if(!gameStarted||gameOver||parryCooldown>0)return;parryTime=.32;parryCooldown=.55;setHint('ГОТОВЬСЯ К КОНТРАТАКЕ');setTimeout(()=>{if(!gameOver)setHint('')},280)}
+function power(){if(!gameStarted||gameOver||powerTime>0)return;powerTime=3.2;setHint('ПОЛИМОРФИН АКТИВЕН');setTimeout(()=>{if(!gameOver)setHint('')},900)}
+document.getElementById('attack').addEventListener('pointerdown',e=>{e.preventDefault();doAttack(false)});
+document.getElementById('heavy').addEventListener('pointerdown',e=>{e.preventDefault();doAttack(true)});
+document.getElementById('dodge').addEventListener('pointerdown',e=>{e.preventDefault();dodge()});
+document.getElementById('parry').addEventListener('pointerdown',e=>{e.preventDefault();parry()});
+document.getElementById('power').addEventListener('pointerdown',e=>{e.preventDefault();power()});
+document.getElementById('play').addEventListener('click',()=>{document.getElementById('start').style.display='none';gameStarted=true;setHint('УНИЧТОЖЬ ПОВЕЛИТЕЛЕЙ НОЧИ');setTimeout(()=>setHint(''),1600)});
+
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.code==='Space'){e.preventDefault();dodge()}if(e.key.toLowerCase()==='j')doAttack(false);if(e.key.toLowerCase()==='k')doAttack(true);if(e.key.toLowerCase()==='q')power();if(e.key.toLowerCase()==='l')parry()});
+addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+const stick=document.getElementById('stick'),nub=document.getElementById('nub');let stickId=null,stickCenter={x:0,y:0};
+stick.addEventListener('pointerdown',e=>{stickId=e.pointerId;stick.setPointerCapture(stickId);const r=stick.getBoundingClientRect();stickCenter={x:r.left+r.width/2,y:r.top+r.height/2};updateStick(e)});
+stick.addEventListener('pointermove',e=>{if(e.pointerId===stickId)updateStick(e)});
+function updateStick(e){const dx=e.clientX-stickCenter.x,dy=e.clientY-stickCenter.y,len=Math.hypot(dx,dy),max=40,k=Math.min(1,max/(len||1));move.x=dx*k/max;move.y=dy*k/max;nub.style.left=(34+dx*k)+'px';nub.style.top=(34+dy*k)+'px'}
+function resetStick(e){if(e.pointerId!==stickId)return;stickId=null;move={x:0,y:0};nub.style.left='34px';nub.style.top='34px'}
+stick.addEventListener('pointerup',resetStick);stick.addEventListener('pointercancel',resetStick);
+
+function animate(now){
+ requestAnimationFrame(animate);const dt=Math.min((now-lastTime)/1000,.04);lastTime=now;
+  if(player.modelMixer)player.modelMixer.update(dt);
+  for(const e of enemies){if(e.f.modelMixer)e.f.modelMixer.update(dt);}
+ attackCooldown=Math.max(0,attackCooldown-dt);heavyCooldown=Math.max(0,heavyCooldown-dt);dodgeTime=Math.max(0,dodgeTime-dt);invuln=Math.max(0,invuln-dt);powerTime=Math.max(0,powerTime-dt);parryTime=Math.max(0,parryTime-dt);parryCooldown=Math.max(0,parryCooldown-dt);
+ if(gameStarted&&!gameOver){
+  let ix=move.x,iz=move.y;
+  if(keys.w||keys.arrowup)iz-=1;if(keys.s||keys.arrowdown)iz+=1;if(keys.a||keys.arrowleft)ix-=1;if(keys.d||keys.arrowright)ix+=1;
+  const l=Math.hypot(ix,iz);if(l>1){ix/=l;iz/=l}
+  const speed=dodgeTime>0?13:(powerTime>0?5.4:4.1);
+  player.g.position.x=clamp(player.g.position.x+ix*speed*dt,-16.5,16.5);
+  player.g.position.z=clamp(player.g.position.z+iz*speed*dt,-16.5,16.5);
+  if(Math.hypot(ix,iz)>.08)player.g.rotation.y=Math.atan2(ix,iz);
+  const moving=Math.min(1,Math.hypot(ix,iz));
+  setModelAnimation(player,moving>.12?'walk':'idle');
+  // Light footwork, shoulder sway, weapon-ready idle, and readable attack wind-up.
+  player.g.position.y=Math.sin(now*.012)*.025*moving;
+  player.legs.forEach((leg,i)=>{leg.rotation.x=Math.sin(now*.014+i*Math.PI)*moving*.45});
+  player.arms.forEach((arm,i)=>{arm.rotation.z=Math.sin(now*.006+i*Math.PI)*.06 + (i===0?attackAnim*2.4:heavyAnim*2.2)});
+  attackAnim=Math.max(0,attackAnim-dt*2.8);heavyAnim=Math.max(0,heavyAnim-dt*2.2);
+  if(player.bladeGroup){player.bladeGroup.rotation.y=Math.sin(now*.003)*.025;player.bladeGroup.rotation.z=-attackAnim*.8-heavyAnim*1.2;}
+  // Enemy footwork and combat pose animation.
+  for(const e of enemies){if(e.dead)continue;
+    const movingEnemy=e.stun<=0 && Math.hypot(player.g.position.x-e.f.g.position.x,player.g.position.z-e.f.g.position.z)>.98;
+    setModelAnimation(e.f,movingEnemy?'walk':'idle');
+    e.f.g.position.y=Math.sin(now*.01+(e.boss?1.5:0))*.018*(movingEnemy?1:0.3);
+    e.f.legs.forEach((leg,i)=>{leg.rotation.x=movingEnemy?Math.sin(now*.012+i*Math.PI)*.3:0});
+    e.f.arms.forEach((arm,i)=>{arm.rotation.z=Math.sin(now*.004+i*Math.PI)*.04+(e.windup>0?(i===0?-.48:.18):0)});
+    if(e.f.bladeGroup&&e.windup>0)e.f.bladeGroup.rotation.z=-.35;
+    else if(e.f.bladeGroup)e.f.bladeGroup.rotation.z=Math.sin(now*.003)*.02;
+  }
+  player.g.visible=!(invuln>0&&Math.floor(now/65)%2===0);
+  for(const e of enemies){
+   if(e.dead)continue;
+   const p=e.f.g.position,dx=player.g.position.x-p.x,dz=player.g.position.z-p.z,dist=Math.hypot(dx,dz);
+   if(e.stun>0){e.stun=Math.max(0,e.stun-dt)}else if(dist>.95){p.x+=dx/(dist||1)*e.speed*dt;p.z+=dz/(dist||1)*e.speed*dt;e.f.g.rotation.y=Math.atan2(-dx,-dz)}
+   e.attack-=dt;
+   if(dist<2.0&&e.attack<=0&&e.windup<=0){e.windup=e.boss?.78:.58;setHint(e.boss?'КЁРЗ ГОТОВИТ УДАР — ПАРИРУЙ!':'ВРАГ АТАКУЕТ — ПАРИРУЙ!');}
+   if(e.windup>0){e.windup-=dt;if(e.windup<=0){e.attack=e.boss?1.25:1.55;
+     const towardEnemy=new THREE.Vector3(p.x-player.g.position.x,0,p.z-player.g.position.z).normalize();
+     const playerFacing=new THREE.Vector3(Math.sin(player.g.rotation.y),0,Math.cos(player.g.rotation.y));
+     const facingEnemy=playerFacing.dot(towardEnemy)>.15;
+     if(parryTime>0&&dist<2.25&&facingEnemy){e.stun=e.boss?1.0:.85;e.hp-=e.boss?24:30;e.hitFlash=.3;addBurst(p.clone().add(new THREE.Vector3(0,1,0)),0x64dfff);setHint('ПАРИРОВАНИЕ! КОНТРАТАКА');if(e.hp<=0){e.dead=true;scene.remove(e.f.g);if(e.boss)setHint('КЁРЗ ПОВЕРЖЕН<br><small>Прототип завершён</small>')}}else if(dist<1.65){damagePlayer(e.boss?16:9)}
+     setTimeout(()=>{if(!gameOver)setHint('')},650);
+   }}
+   e.f.g.visible=!(e.hitFlash>0&&Math.floor(now/35)%2===0);e.hitFlash=Math.max(0,e.hitFlash-dt);
+  }
+  if(!bossSpawned&&enemies.every(e=>e.dead)){spawnEnemy(0,-11,true);setHint('ОН ЗНАЛ, ЧТО ТЫ ПРИДЁШЬ');setTimeout(()=>{if(!gameOver)setHint(''),0},1800)}
+  if(bossSpawned){const b=enemies.find(e=>e.boss);if(b&&!b.dead){document.getElementById('bossfill').style.width=(Math.max(0,b.hp)/b.max*100)+'%';document.getElementById('bosstext').textContent=Math.max(0,b.hp)+' / '+b.max}}
+ }
+ for(let i=bursts.length-1;i>=0;i--){const b=bursts[i];b.t-=dt;b.m.scale.setScalar(1+(1-b.t/b.max)*3);b.m.material.opacity=Math.max(0,b.t/b.max);if(b.t<=0){scene.remove(b.m);bursts.splice(i,1)}}
+ const target=new THREE.Vector3(player.g.position.x,0,player.g.position.z);
+ camera.position.lerp(new THREE.Vector3(target.x+0,13,target.z+13),.07);camera.lookAt(target.x,0,target.z);
+ renderer.render(scene,camera);
+}
+requestAnimationFrame(animate);
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script>
+</body>
+</html>
